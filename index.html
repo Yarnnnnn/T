@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Koistar Coffee — Order & Pricing Calculator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@300;400&display=swap');
+
+  :root {
+    --ink: #1a1714;
+    --ink-mid: #4a4540;
+    --ink-light: #8a837a;
+    --ink-faint: #c8c0b8;
+    --paper: #f7f4ef;
+    --paper-warm: #ede9e2;
+    --paper-mid: #e0dbd2;
+    --gold: #a07830;
+    --gold-light: #c8a860;
+    --gold-faint: #f0e8d4;
+    --green: #2d5a3d;
+    --green-light: #e8f2eb;
+    --red: #8b3a2a;
+    --red-light: #f5ebe8;
+    --amber: #7a5010;
+    --amber-light: #f5ead0;
+    --blue: #2a4a6a;
+    --blue-light: #e8eef5;
+    --radius: 2px;
+    --radius-lg: 4px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Mono', monospace;
+    background: var(--paper);
+    color: var(--ink);
+    font-size: 13px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* Layout */
+  .app { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+
+  /* Sidebar */
+  .sidebar {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 2rem 1.5rem;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .sidebar-brand { border-bottom: 0.5px solid #3a3530; padding-bottom: 1.5rem; }
+  .sidebar-brand .mark {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 300;
+    letter-spacing: 0.08em;
+    color: var(--gold-light);
+    display: block;
+    line-height: 1.2;
+  }
+  .sidebar-brand .sub {
+    font-size: 10px;
+    color: var(--ink-faint);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-top: 4px;
+    display: block;
+  }
+
+  .sidebar-section { display: flex; flex-direction: column; gap: 1rem; }
+  .sidebar-section-label {
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    margin-bottom: -4px;
+  }
+
+  .setting-row { display: flex; flex-direction: column; gap: 4px; }
+  .setting-row label { font-size: 11px; color: #9a9590; }
+  .setting-row .val {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--gold-light);
+    font-family: 'Cormorant Garamond', serif;
+  }
+  .setting-row input[type=range] {
+    width: 100%;
+    height: 2px;
+    accent-color: var(--gold);
+    cursor: pointer;
+  }
+
+  .nav { display: flex; flex-direction: column; gap: 2px; }
+  .nav-btn {
+    padding: 8px 10px;
+    background: transparent;
+    border: none;
+    color: #9a9590;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    text-align: left;
+    border-radius: var(--radius);
+    letter-spacing: 0.04em;
+    transition: all 0.15s;
+  }
+  .nav-btn:hover { background: #2a2520; color: var(--paper); }
+  .nav-btn.active { background: var(--gold); color: var(--ink); font-weight: 400; }
+
+  .sidebar-footer {
+    margin-top: auto;
+    font-size: 10px;
+    color: #5a5550;
+    line-height: 1.8;
+    border-top: 0.5px solid #3a3530;
+    padding-top: 1rem;
+  }
+
+  /* Main */
+  .main { padding: 2.5rem 2rem; overflow-y: auto; }
+
+  .page-header {
+    margin-bottom: 2rem;
+    border-bottom: 0.5px solid var(--paper-mid);
+    padding-bottom: 1.5rem;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+  .page-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    font-weight: 300;
+    color: var(--ink);
+    letter-spacing: 0.02em;
+  }
+  .page-sub { font-size: 11px; color: var(--ink-light); letter-spacing: 0.06em; }
+
+  /* Tabs */
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* Cards */
+  .card {
+    background: white;
+    border: 0.5px solid var(--paper-mid);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .card-title {
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    margin-bottom: 1rem;
+  }
+
+  /* Metrics */
+  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 1rem; }
+  .metric {
+    background: var(--paper-warm);
+    border-radius: var(--radius);
+    padding: 0.875rem 1rem;
+  }
+  .metric-label { font-size: 10px; color: var(--ink-light); letter-spacing: 0.06em; margin-bottom: 4px; }
+  .metric-value {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 24px;
+    font-weight: 300;
+    color: var(--ink);
+    line-height: 1;
+  }
+  .metric-sub { font-size: 10px; color: var(--ink-faint); margin-top: 3px; }
+
+  /* Bean list */
+  .bean-header {
+    display: grid;
+    grid-template-columns: minmax(0,1fr) 90px 80px 90px 90px;
+    gap: 8px;
+    padding: 0 0 8px;
+    border-bottom: 0.5px solid var(--paper-mid);
+    margin-bottom: 4px;
+  }
+  .bean-header span { font-size: 10px; color: var(--ink-light); letter-spacing: 0.08em; text-align: right; }
+  .bean-header span:first-child { text-align: left; }
+
+  .bean-row {
+    display: grid;
+    grid-template-columns: minmax(0,1fr) 90px 80px 90px 90px;
+    gap: 8px;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 0.5px solid var(--paper-warm);
+    transition: background 0.1s;
+  }
+  .bean-row:last-child { border-bottom: none; }
+  .bean-row:hover { background: var(--paper-warm); margin: 0 -1.5rem; padding: 10px 1.5rem; }
+
+  .bean-name { font-size: 13px; color: var(--ink); font-weight: 400; line-height: 1.3; }
+  .bean-cat { font-size: 10px; color: var(--ink-light); margin-top: 2px; }
+
+  .badge {
+    display: inline-block;
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 99px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .badge-gold { background: var(--gold-faint); color: var(--amber); }
+  .badge-blue { background: var(--blue-light); color: var(--blue); }
+  .badge-green { background: var(--green-light); color: var(--green); }
+  .badge-red { background: var(--red-light); color: var(--red); }
+
+  .qty-ctrl { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+  .qty-btn {
+    width: 22px; height: 22px;
+    border-radius: var(--radius);
+    border: 0.5px solid var(--ink-faint);
+    background: transparent;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--ink-mid);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.1s;
+    font-family: 'DM Mono', monospace;
+    line-height: 1;
+  }
+  .qty-btn:hover { border-color: var(--ink); background: var(--paper-warm); }
+  .qty-num { font-size: 14px; font-family: 'Cormorant Garamond', serif; min-width: 18px; text-align: center; color: var(--ink); }
+  .cell-right { text-align: right; font-size: 12px; color: var(--ink-mid); }
+  .cell-right.primary { font-weight: 400; color: var(--ink); }
+
+  /* Summary table */
+  .summary-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .summary-table td { padding: 6px 0; border-bottom: 0.5px solid var(--paper-warm); color: var(--ink-mid); }
+  .summary-table td:last-child { text-align: right; color: var(--ink); }
+  .summary-table tr.total td { border-top: 0.5px solid var(--ink-faint); border-bottom: none; padding-top: 10px; font-size: 13px; color: var(--ink); }
+
+  /* EMS table */
+  .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .data-table th { font-size: 10px; color: var(--ink-light); letter-spacing: 0.08em; padding: 6px 8px; border-bottom: 0.5px solid var(--paper-mid); text-align: right; font-weight: 400; }
+  .data-table th:first-child { text-align: left; }
+  .data-table td { padding: 6px 8px; border-bottom: 0.5px solid var(--paper-warm); text-align: right; color: var(--ink-mid); }
+  .data-table td:first-child { text-align: left; color: var(--ink); }
+  .data-table tr.active-row td { background: var(--green-light); color: var(--green); font-weight: 400; }
+  .data-table tr.current-row td { background: var(--gold-faint); color: var(--amber); }
+
+  /* Note box */
+  .note {
+    background: var(--gold-faint);
+    border-left: 2px solid var(--gold);
+    border-radius: 0;
+    padding: 0.75rem 1rem;
+    margin-top: 0.75rem;
+    font-size: 12px;
+    color: var(--amber);
+    line-height: 1.6;
+  }
+  .note.success { background: var(--green-light); border-color: var(--green); color: var(--green); }
+  .note.warn { background: var(--red-light); border-color: var(--red); color: var(--red); }
+
+  /* ROI bar */
+  .roi-bar-wrap { margin: 1rem 0; }
+  .roi-bar-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-light); margin-bottom: 6px; }
+  .roi-bar-bg { background: var(--paper-mid); height: 6px; border-radius: 0; overflow: hidden; }
+  .roi-bar-fill { height: 100%; background: var(--green); transition: width 0.4s ease; }
+
+  /* Markup sensitivity */
+  .markup-grid { display: grid; grid-template-columns: minmax(0,1.5fr) repeat(5,1fr); gap: 0; border: 0.5px solid var(--paper-mid); border-radius: var(--radius); overflow: hidden; }
+  .mg-cell { padding: 7px 10px; font-size: 12px; border-right: 0.5px solid var(--paper-warm); border-bottom: 0.5px solid var(--paper-warm); color: var(--ink-mid); }
+  .mg-cell:last-child { border-right: none; }
+  .mg-cell.header { font-size: 10px; color: var(--ink-light); letter-spacing: 0.06em; background: var(--paper-warm); }
+  .mg-cell.bean-name-cell { color: var(--ink); font-size: 11px; line-height: 1.3; }
+  .mg-cell.active { background: var(--gold-faint); color: var(--amber); font-weight: 400; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { position: static; height: auto; }
+    .bean-row, .bean-header { grid-template-columns: minmax(0,1fr) 60px 70px 70px; }
+    .bean-header span:nth-child(3), .bean-row .bean-col-3 { display: none; }
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--ink-faint); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <span class="mark">Koistar</span>
+      <span class="sub">Coffee Calculator</span>
+    </div>
+
+    <div class="sidebar-section">
+      <p class="sidebar-section-label">Navigation</p>
+      <nav class="nav">
+        <button class="nav-btn active" onclick="switchTab('order')">01 — Order builder</button>
+        <button class="nav-btn" onclick="switchTab('pricing')">02 — Pricing & markup</button>
+        <button class="nav-btn" onclick="switchTab('shipping')">03 — EMS rates</button>
+        <button class="nav-btn" onclick="switchTab('roi')">04 — ROI & break-even</button>
+      </nav>
+    </div>
+
+    <div class="sidebar-section">
+      <p class="sidebar-section-label">Global settings</p>
+
+      <div class="setting-row">
+        <label>JPY → THB rate</label>
+        <span class="val" id="s_fx">0.24</span>
+        <input type="range" id="fx" min="0.20" max="0.35" step="0.01" value="0.24" oninput="calc()">
+      </div>
+
+      <div class="setting-row">
+        <label>Duty + VAT on beans</label>
+        <span class="val" id="s_duty">15%</span>
+        <input type="range" id="duty" min="5" max="35" step="1" value="15" oninput="calc()">
+      </div>
+
+      <div class="setting-row">
+        <label>Compliance / label per bag</label>
+        <span class="val" id="s_compliance">30 THB</span>
+        <input type="range" id="compliance" min="0" max="150" step="5" value="30" oninput="calc()">
+      </div>
+
+      <div class="setting-row">
+        <label>Target markup</label>
+        <span class="val" id="s_markup">4.0×</span>
+        <input type="range" id="markup" min="2" max="8" step="0.5" value="4" oninput="calc()">
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      Days Coffee Roaster<br>
+      Niigata, Japan<br>
+      Zone 2 EMS rates (Jan 2026)<br>
+      <br>
+      <!--
+        DEVELOPER NOTES
+        ===============
+        Data: BEANS array — add / remove beans here
+        Shipping: EMS_ZONE2 array — official Japan Post rates
+        Extend: add a 5th tab by duplicating a tab-panel
+        and adding a nav-btn + switchTab() case
+      -->
+      v1.0 — ready for Claude Code
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- ── TAB 1: ORDER BUILDER ── -->
+    <div id="tab-order" class="tab-panel active">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Order builder</h1>
+          <p class="page-sub">Select quantities from the Days lineup — all costs recalculate live</p>
+        </div>
+        <span class="page-sub" id="order-weight-badge">—</span>
+      </div>
+
+      <div class="card">
+        <p class="card-title">Days Coffee Roaster — select bags per bean</p>
+        <div class="bean-header">
+          <span>Bean</span>
+          <span>JPY / bag</span>
+          <span>Qty</span>
+          <span>Landed (THB)</span>
+          <span>Retail (THB)</span>
+        </div>
+        <div id="bean-list"></div>
+      </div>
+
+      <div class="metrics" id="order-metrics"></div>
+
+      <div class="card">
+        <p class="card-title">Order summary</p>
+        <table class="summary-table" id="order-summary"></table>
+      </div>
+
+      <div id="order-note" class="note">Select quantities above to build your shipment.</div>
+    </div>
+
+    <!-- ── TAB 2: PRICING ── -->
+    <div id="tab-pricing" class="tab-panel">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Pricing & markup</h1>
+          <p class="page-sub">Full cost stack per bean — landed cost and retail at your markup</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <p class="card-title">Cost breakdown per bean (based on current order)</p>
+        <div id="pricing-breakdown"></div>
+      </div>
+
+      <div class="card">
+        <p class="card-title">Markup sensitivity — retail price at 2× to 6×</p>
+        <div id="markup-sensitivity"></div>
+      </div>
+    </div>
+
+    <!-- ── TAB 3: EMS SHIPPING ── -->
+    <div id="tab-shipping" class="tab-panel">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">EMS shipping rates</h1>
+          <p class="page-sub">Japan Post Zone 2 (Thailand) — official rates as of January 2026</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <p class="card-title">Rate table — your current order tier is highlighted</p>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Weight</th>
+              <th>EMS (JPY)</th>
+              <th>EMS (THB)</th>
+              <th>Per bag — 10 bags</th>
+              <th>Per bag — 20 bags</th>
+              <th>Per bag — 30 bags</th>
+            </tr>
+          </thead>
+          <tbody id="ems-tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <p class="card-title">Courier comparison — Japan → Thailand (estimated)</p>
+        <table class="data-table">
+          <thead><tr><th>Method</th><th>Speed</th><th>~3kg cost (THB)</th><th>Recommendation</th></tr></thead>
+          <tbody>
+            <tr><td>Japan Post EMS</td><td>3–5 days</td><td>~1,380</td><td>Standard — best value, tracked</td></tr>
+            <tr><td>DHL / FedEx Express</td><td>1–3 days</td><td>~3,000–4,500</td><td>Urgent reorders only</td></tr>
+            <tr><td>Japan Post SAL</td><td>2–3 weeks</td><td>~600–800</td><td>Not recommended — harms freshness</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── TAB 4: ROI ── -->
+    <div id="tab-roi" class="tab-panel">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">ROI & break-even</h1>
+          <p class="page-sub">Monthly margin from farm visitors vs equipment cost recovery</p>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+        <div class="card">
+          <p class="card-title">Equipment investment</p>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div class="setting-row" style="color:var(--ink)">
+              <label style="color:var(--ink-light)">Total investment (THB)</label>
+              <span class="val" id="r_invest_val" style="color:var(--ink);font-size:16px">81,000</span>
+              <input type="range" id="r_invest" min="50000" max="200000" step="5000" value="81000" oninput="calcRoi()" style="accent-color:var(--ink)">
+            </div>
+            <div class="setting-row">
+              <label style="color:var(--ink-light)">Amortise over (months)</label>
+              <span class="val" id="r_amort_val" style="color:var(--ink);font-size:16px">24</span>
+              <input type="range" id="r_amort" min="12" max="48" step="6" value="24" oninput="calcRoi()" style="accent-color:var(--ink)">
+            </div>
+            <div class="setting-row">
+              <label style="color:var(--ink-light)">Monthly operating cost</label>
+              <span class="val" id="r_opcost_val" style="color:var(--ink);font-size:16px">4,000</span>
+              <input type="range" id="r_opcost" min="1000" max="15000" step="500" value="4000" oninput="calcRoi()" style="accent-color:var(--ink)">
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <p class="card-title">Farm visitor assumptions</p>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div class="setting-row">
+              <label style="color:var(--ink-light)">Visitors per month</label>
+              <span class="val" id="r_vis_val" style="color:var(--ink);font-size:16px">20</span>
+              <input type="range" id="r_visitors" min="5" max="100" step="5" value="20" oninput="calcRoi()" style="accent-color:var(--ink)">
+            </div>
+            <div class="setting-row">
+              <label style="color:var(--ink-light)">Drink revenue per visitor</label>
+              <span class="val" id="r_drink_val" style="color:var(--ink);font-size:16px">175 THB</span>
+              <input type="range" id="r_drink" min="0" max="400" step="25" value="175" oninput="calcRoi()" style="accent-color:var(--ink)">
+            </div>
+            <div class="setting-row">
+              <label style="color:var(--ink-light)">% visitors who buy beans</label>
+              <span class="val" id="r_conv_val" style="color:var(--ink);font-size:16px">35%</span>
+              <input type="range" id="r_conv" min="10" max="80" step="5" value="35" oninput="calcRoi()" style="accent-color:var(--ink)">
+            </div>
+            <div class="setting-row">
+              <label style="color:var(--ink-light)">Avg bags per buyer</label>
+              <span class="val" id="r_bpb_val" style="color:var(--ink);font-size:16px">1</span>
+              <input type="range" id="r_bpb" min="1" max="4" step="1" value="1" oninput="calcRoi()" style="accent-color:var(--ink)">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="metrics" id="roi-metrics"></div>
+
+      <div class="roi-bar-wrap">
+        <div class="roi-bar-label">
+          <span>Monthly margin vs target</span>
+          <span id="roi-pct">—</span>
+        </div>
+        <div class="roi-bar-bg"><div class="roi-bar-fill" id="roi-bar" style="width:0%"></div></div>
+      </div>
+
+      <div class="card" style="margin-top:1rem">
+        <p class="card-title">Break-even sensitivity</p>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Visitors / mo</th>
+              <th>Bean buyers</th>
+              <th>Bags sold</th>
+              <th>Bean margin</th>
+              <th>Drink margin</th>
+              <th>Total margin</th>
+              <th>vs target</th>
+            </tr>
+          </thead>
+          <tbody id="roi-tbody"></tbody>
+        </table>
+      </div>
+      <div id="roi-note" class="note">—</div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+// DATA — edit these to update beans or rates
+// ─────────────────────────────────────────────
+
+const BEANS = [
+  {
+    name: 'Nitrogen Jasper 0825',
+    origin: 'Ethiopia · Nitrogen Anaerobic Natural',
+    cat: 'Rare lot',
+    size: 100,
+    jpy: 7670,
+    packed_g: 130,
+  },
+  {
+    name: 'Aroma Nativo Geisha 354',
+    origin: 'Colombia · Honey Lactic Fermentation',
+    cat: 'Roaster exclusive',
+    size: 50,
+    jpy: 6140,
+    packed_g: 80,
+  },
+  {
+    name: 'Kaguyu Dark',
+    origin: 'Kenya · Washed · SL28/34 · 1,800m',
+    cat: 'Espresso',
+    size: 200,
+    jpy: 2380,
+    packed_g: 250,
+  },
+  {
+    name: 'Guariroba Lot 01',
+    origin: 'Brazil · CM + Thermal Shock · Pink Bourbon',
+    cat: 'Filter',
+    size: 100,
+    jpy: 3460,
+    packed_g: 130,
+  },
+  {
+    name: 'Dona Nenem Decaf 99.9%',
+    origin: 'Brazil · Anaerobic Natural → Swiss Water',
+    cat: 'Decaf',
+    size: 100,
+    jpy: 1400,
+    packed_g: 130,
+  },
+];
+
+// Japan Post EMS Zone 2 (Thailand) — official rates Jan 2026
+const EMS_ZONE2 = [
+  {max_g: 500,  jpy: 1900},  {max_g: 1000, jpy: 3150},
+  {max_g: 1500, jpy: 3850},  {max_g: 2000, jpy: 4550},
+  {max_g: 3000, jpy: 5750},  {max_g: 4000, jpy: 6950},
+  {max_g: 5000, jpy: 8150},  {max_g: 6000, jpy: 9350},
+  {max_g: 7000, jpy: 10350}, {max_g: 8000, jpy: 11350},
+  {max_g: 9000, jpy: 12350}, {max_g: 10000,jpy: 13350},
+  {max_g: 15000,jpy: 18350}, {max_g: 20000,jpy: 23350},
+  {max_g: 30000,jpy: 33350},
+];
+
+const EMS_LABELS = ['500g','1kg','1.5kg','2kg','3kg','4kg','5kg','6kg','7kg','8kg','9kg','10kg','15kg','20kg','30kg'];
+
+// ─────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────
+
+let qty = BEANS.map(() => 0);
+
+// ─────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────
+
+const fmt  = n => Math.round(n).toLocaleString('en');
+const fmtD = (n, d) => Number(n).toFixed(d);
+
+function getSettings() {
+  return {
+    fx:         parseFloat(document.getElementById('fx').value),
+    duty:       parseFloat(document.getElementById('duty').value) / 100,
+    compliance: parseFloat(document.getElementById('compliance').value),
+    markup:     parseFloat(document.getElementById('markup').value),
+  };
+}
+
+function getEmsJpy(grams) {
+  for (const e of EMS_ZONE2) if (grams <= e.max_g) return e.jpy;
+  return EMS_ZONE2[EMS_ZONE2.length - 1].jpy;
+}
+
+function getEmsTierIdx(grams) {
+  for (let i = 0; i < EMS_ZONE2.length; i++) if (grams <= EMS_ZONE2[i].max_g) return i;
+  return EMS_ZONE2.length - 1;
+}
+
+function catBadge(cat) {
+  const map = {
+    'Rare lot':          'badge-gold',
+    'Roaster exclusive': 'badge-blue',
+    'Espresso':          'badge-green',
+    'Filter':            'badge-green',
+    'Decaf':             'badge-red',
+  };
+  return `<span class="badge ${map[cat] || 'badge-blue'}">${cat}</span>`;
+}
+
+// ─────────────────────────────────────────────
+// INIT: build bean list DOM (static once)
+// ─────────────────────────────────────────────
+
+function buildBeanList() {
+  const el = document.getElementById('bean-list');
+  el.innerHTML = BEANS.map((b, i) => `
+    <div class="bean-row" id="bean-row-${i}">
+      <div>
+        <div class="bean-name">${b.name}</div>
+        <div class="bean-cat">${catBadge(b.cat)} &nbsp;${b.origin} &nbsp;·&nbsp; ${b.size}g</div>
+      </div>
+      <div class="cell-right">¥${fmt(b.jpy)}</div>
+      <div class="qty-ctrl">
+        <button class="qty-btn" onclick="adjQty(${i},-1)" aria-label="decrease">−</button>
+        <span class="qty-num" id="qty-${i}">0</span>
+        <button class="qty-btn" onclick="adjQty(${i},1)" aria-label="increase">+</button>
+      </div>
+      <div class="cell-right" id="landed-${i}">—</div>
+      <div class="cell-right primary" id="retail-${i}">—</div>
+    </div>
+  `).join('');
+}
+
+function adjQty(i, d) {
+  qty[i] = Math.max(0, qty[i] + d);
+  document.getElementById('qty-' + i).textContent = qty[i];
+  calc();
+}
+
+// ─────────────────────────────────────────────
+// MAIN CALC
+// ─────────────────────────────────────────────
+
+function calc() {
+  const { fx, duty, compliance, markup } = getSettings();
+
+  // Update sidebar display values
+  document.getElementById('s_fx').textContent         = fmtD(fx, 2);
+  document.getElementById('s_duty').textContent       = Math.round(duty * 100) + '%';
+  document.getElementById('s_compliance').textContent = fmt(compliance) + ' THB';
+  document.getElementById('s_markup').textContent     = fmtD(markup, 1) + '×';
+
+  const totalBags   = qty.reduce((a, b) => a + b, 0);
+  const totalWeightG = BEANS.reduce((s, b, i) => s + qty[i] * b.packed_g, 0);
+  const emsJpy      = totalBags > 0 ? getEmsJpy(totalWeightG) : 0;
+  const emsThb      = emsJpy * fx;
+  const shipPerBag  = totalBags > 0 ? emsThb / totalBags : 0;
+
+  const totalBeanCost = BEANS.reduce((s, b, i) => s + qty[i] * (b.jpy * fx), 0);
+  const totalDuty     = totalBeanCost * duty;
+  const totalComply   = totalBags * compliance;
+  const totalLanded   = totalBeanCost + emsThb + totalDuty + totalComply;
+
+  let totalRetail = 0;
+  BEANS.forEach((b, i) => {
+    const bc     = b.jpy * fx;
+    const landed = bc + shipPerBag + (bc * duty) + compliance;
+    const retail = landed * markup;
+    totalRetail += qty[i] * retail;
+    if (qty[i] > 0) {
+      document.getElementById('landed-' + i).textContent = 'THB ' + fmt(landed);
+      document.getElementById('retail-' + i).textContent = 'THB ' + fmt(retail);
+    } else {
+      document.getElementById('landed-' + i).textContent = '—';
+      document.getElementById('retail-' + i).textContent = '—';
+    }
+  });
+
+  const grossProfit = totalRetail - totalLanded;
+  const gm          = totalRetail > 0 ? (grossProfit / totalRetail * 100) : 0;
+
+  document.getElementById('order-weight-badge').textContent =
+    totalBags > 0 ? `${totalBags} bags · ${fmtD(totalWeightG / 1000, 2)} kg` : '';
+
+  // Metrics
+  document.getElementById('order-metrics').innerHTML = `
+    <div class="metric"><div class="metric-label">Total bags</div><div class="metric-value">${totalBags}</div><div class="metric-sub">this shipment</div></div>
+    <div class="metric"><div class="metric-label">EMS shipping</div><div class="metric-value">${totalBags > 0 ? 'THB ' + fmt(emsThb) : '—'}</div><div class="metric-sub">${totalBags > 0 ? '¥' + fmt(emsJpy) + ' · THB ' + fmt(shipPerBag) + '/bag' : 'select beans'}</div></div>
+    <div class="metric"><div class="metric-label">Total landed</div><div class="metric-value">${totalBags > 0 ? fmt(totalLanded) : '—'}</div><div class="metric-sub">THB · all-in cost</div></div>
+    <div class="metric"><div class="metric-label">Total retail value</div><div class="metric-value">${totalBags > 0 ? fmt(totalRetail) : '—'}</div><div class="metric-sub">THB · ${fmtD(gm, 1)}% gross margin</div></div>
+    <div class="metric"><div class="metric-label">Gross profit</div><div class="metric-value">${totalBags > 0 ? fmt(grossProfit) : '—'}</div><div class="metric-sub">THB this order</div></div>
+  `;
+
+  // Summary table
+  let sumRows = '';
+  BEANS.forEach((b, i) => {
+    if (qty[i] === 0) return;
+    const bc     = b.jpy * fx;
+    const landed = bc + shipPerBag + (bc * duty) + compliance;
+    const retail = landed * markup;
+    sumRows += `<tr><td>${b.name} ×${qty[i]}</td><td>THB ${fmt(retail * qty[i])}</td></tr>`;
+  });
+  if (totalBags > 0) {
+    sumRows += `<tr><td style="color:var(--ink-light)">EMS shipping (Japan Post)</td><td style="color:var(--ink-light)">THB ${fmt(emsThb)}</td></tr>`;
+    sumRows += `<tr><td style="color:var(--ink-light)">Duty + compliance</td><td style="color:var(--ink-light)">THB ${fmt(totalDuty + totalComply)}</td></tr>`;
+    sumRows += `<tr class="total"><td>Gross profit this order</td><td>THB ${fmt(grossProfit)}</td></tr>`;
+  }
+  document.getElementById('order-summary').innerHTML =
+    sumRows || '<tr><td style="color:var(--ink-light);padding:8px 0">Add beans above to see the order summary</td></tr>';
+
+  // Note
+  const noteEl = document.getElementById('order-note');
+  let noteClass = 'note', noteText = '';
+  if (totalBags === 0) {
+    noteText = 'Select quantities above to build your first shipment order.';
+  } else if (totalBags < 10) {
+    noteText = `Small order of ${totalBags} bags — shipping of THB ${fmt(emsThb)} spreads over few bags (${fmt(shipPerBag)} THB each). Ordering more reduces per-bag overhead significantly.`;
+  } else if (gm < 45) {
+    noteClass = 'note warn';
+    noteText = `Gross margin of ${fmtD(gm, 1)}% is below the 50% target. Consider increasing markup, reducing duty exposure, or ordering larger quantities.`;
+  } else {
+    noteClass = 'note success';
+    noteText = `Healthy order — ${totalBags} bags, ${fmtD(totalWeightG / 1000, 1)} kg packed, EMS THB ${fmt(emsThb)} (${fmt(shipPerBag)} THB/bag). Gross margin: ${fmtD(gm, 1)}%.`;
+  }
+  noteEl.className = noteClass;
+  noteEl.textContent = noteText;
+
+  buildPricingTab(fx, duty, compliance, markup, totalBags, shipPerBag);
+  buildEmsTab(totalWeightG, fx);
+  calcRoi(fx, duty, compliance, markup, totalBags, shipPerBag);
+}
+
+// ─────────────────────────────────────────────
+// TAB 2: PRICING
+// ─────────────────────────────────────────────
+
+function buildPricingTab(fx, duty, compliance, markup, totalBags, shipPerBag) {
+  // Breakdown table
+  let bHtml = `
+    <div style="display:grid;grid-template-columns:minmax(0,1.8fr) repeat(5,1fr);gap:0;border:0.5px solid var(--paper-mid);border-radius:var(--radius);overflow:hidden">
+      ${['Bean','Roaster (JPY)','Bean (THB)','Shipping/bag','Landed (THB)','Retail (THB)'].map((h,i) =>
+        `<div class="mg-cell header" style="${i>0?'text-align:right':''}">${h}</div>`
+      ).join('')}
+  `;
+  BEANS.forEach((b, i) => {
+    const bc     = b.jpy * fx;
+    const landed = bc + shipPerBag + (bc * duty) + compliance;
+    const retail = landed * markup;
+    bHtml += `
+      <div class="mg-cell bean-name-cell">${b.name}<br><span style="font-size:10px;color:var(--ink-faint)">${b.size}g</span></div>
+      <div class="mg-cell" style="text-align:right">¥${fmt(b.jpy)}</div>
+      <div class="mg-cell" style="text-align:right">${fmt(bc)}</div>
+      <div class="mg-cell" style="text-align:right">${totalBags > 0 ? fmt(shipPerBag) : '—'}</div>
+      <div class="mg-cell" style="text-align:right">${totalBags > 0 ? fmt(landed) : '—'}</div>
+      <div class="mg-cell" style="text-align:right;color:var(--green)">${totalBags > 0 ? fmt(retail) : '—'}</div>
+    `;
+  });
+  bHtml += '</div>';
+  document.getElementById('pricing-breakdown').innerHTML = bHtml;
+
+  // Markup sensitivity
+  const mups = [2, 3, 4, 5, 6];
+  let sHtml = `
+    <div class="markup-grid">
+      <div class="mg-cell header">Bean</div>
+      ${mups.map(m => `<div class="mg-cell header" style="text-align:right">${m}× markup</div>`).join('')}
+  `;
+  BEANS.forEach((b) => {
+    const bc     = b.jpy * fx;
+    const landed = bc + shipPerBag + (bc * duty) + compliance;
+    sHtml += `<div class="mg-cell bean-name-cell">${b.name.split(' ').slice(0, 2).join(' ')}</div>`;
+    mups.forEach(m => {
+      const retail  = landed * m;
+      const active  = Math.abs(m - markup) < 0.3;
+      sHtml += `<div class="mg-cell ${active ? 'active' : ''}" style="text-align:right">
+        ${totalBags > 0 ? 'THB ' + fmt(retail) : '—'}
+      </div>`;
+    });
+  });
+  sHtml += '</div>';
+  document.getElementById('markup-sensitivity').innerHTML = sHtml;
+}
+
+// ─────────────────────────────────────────────
+// TAB 3: EMS
+// ─────────────────────────────────────────────
+
+function buildEmsTab(currentWeightG, fx) {
+  const activeTier = currentWeightG > 0 ? getEmsTierIdx(currentWeightG) : -1;
+  document.getElementById('ems-tbody').innerHTML = EMS_ZONE2.map((e, i) => {
+    const thb  = Math.round(e.jpy * fx);
+    const p10  = fmt(thb / 10);
+    const p20  = fmt(thb / 20);
+    const p30  = fmt(thb / 30);
+    const active = i === activeTier ? 'active-row' : '';
+    return `<tr class="${active}">
+      <td>${EMS_LABELS[i]}</td>
+      <td>¥${fmt(e.jpy)}</td>
+      <td>THB ${fmt(thb)}</td>
+      <td>THB ${p10}</td>
+      <td>THB ${p20}</td>
+      <td>THB ${p30}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ─────────────────────────────────────────────
+// TAB 4: ROI
+// ─────────────────────────────────────────────
+
+function calcRoi(fx, duty, compliance, markup, totalBags, shipPerBag) {
+  // Read ROI-specific sliders
+  const invest    = parseFloat(document.getElementById('r_invest').value);
+  const amort     = parseInt(document.getElementById('r_amort').value);
+  const opcost    = parseFloat(document.getElementById('r_opcost').value);
+  const visitors  = parseInt(document.getElementById('r_visitors').value);
+  const drink_rev = parseFloat(document.getElementById('r_drink').value);
+  const drink_cost = 0.25;
+  const conv      = parseFloat(document.getElementById('r_conv').value) / 100;
+  const bpb       = parseInt(document.getElementById('r_bpb').value);
+
+  // If called without args (from ROI slider), re-get settings
+  if (fx === undefined) {
+    const s = getSettings();
+    fx = s.fx; duty = s.duty; compliance = s.compliance; markup = s.markup;
+    totalBags   = qty.reduce((a, b) => a + b, 0);
+    const tw    = BEANS.reduce((s, b, i) => s + qty[i] * b.packed_g, 0);
+    const emsT  = totalBags > 0 ? getEmsJpy(tw) * fx : 0;
+    shipPerBag  = totalBags > 0 ? emsT / totalBags : 0;
+  }
+
+  // Update display values
+  document.getElementById('r_invest_val').textContent  = fmt(invest);
+  document.getElementById('r_amort_val').textContent   = amort;
+  document.getElementById('r_opcost_val').textContent  = fmt(opcost);
+  document.getElementById('r_vis_val').textContent     = visitors;
+  document.getElementById('r_drink_val').textContent   = fmt(drink_rev) + ' THB';
+  document.getElementById('r_conv_val').textContent    = Math.round(conv * 100) + '%';
+  document.getElementById('r_bpb_val').textContent     = bpb;
+
+  const monthly_amort  = invest / amort;
+  const monthly_target = monthly_amort + opcost;
+  const drink_margin   = drink_rev * (1 - drink_cost);
+
+  // Average margin per bag from current order
+  let avgBagMargin = 0;
+  if (totalBags > 0) {
+    let sumMargin = 0;
+    BEANS.forEach((b, i) => {
+      const bc      = b.jpy * fx;
+      const landed  = bc + shipPerBag + (bc * duty) + compliance;
+      const retail  = landed * markup;
+      sumMargin += qty[i] * (retail - landed);
+    });
+    avgBagMargin = sumMargin / totalBags;
+  } else {
+    avgBagMargin = 1500; // fallback estimate
+  }
+
+  const buyers          = visitors * conv;
+  const bags_sold       = buyers * bpb;
+  const bean_margin_mo  = bags_sold * avgBagMargin;
+  const drink_margin_mo = visitors * drink_margin;
+  const total_margin    = bean_margin_mo + drink_margin_mo;
+  const surplus         = total_margin - monthly_target;
+  const pct             = Math.min(150, Math.round((total_margin / monthly_target) * 100));
+
+  document.getElementById('roi-metrics').innerHTML = `
+    <div class="metric"><div class="metric-label">Monthly amortisation</div><div class="metric-value">THB ${fmt(monthly_amort)}</div><div class="metric-sub">equipment recovery</div></div>
+    <div class="metric"><div class="metric-label">Monthly target</div><div class="metric-value">THB ${fmt(monthly_target)}</div><div class="metric-sub">amort + operating</div></div>
+    <div class="metric"><div class="metric-label">Monthly margin</div><div class="metric-value">THB ${fmt(total_margin)}</div><div class="metric-sub">at ${visitors} visitors</div></div>
+    <div class="metric"><div class="metric-label">Surplus / deficit</div>
+      <div class="metric-value" style="color:${surplus >= 0 ? 'var(--green)' : 'var(--red)'}">${surplus >= 0 ? '+' : ''}${fmt(surplus)}</div>
+      <div class="metric-sub">THB / month</div>
+    </div>
+  `;
+
+  document.getElementById('roi-bar').style.width = Math.min(100, pct) + '%';
+  document.getElementById('roi-pct').textContent  = pct + '% of monthly target';
+  document.getElementById('roi-bar').style.background = pct >= 100 ? 'var(--green)' : 'var(--gold)';
+
+  const v_levels = [5, 10, 15, 20, 30, 50, 75, 100];
+  document.getElementById('roi-tbody').innerHTML = v_levels.map(v => {
+    const bb  = v * conv;
+    const bs  = bb * bpb;
+    const bm  = bs * avgBagMargin;
+    const dm  = v * drink_margin;
+    const tm  = bm + dm;
+    const diff = tm - monthly_target;
+    const active = v === visitors ? 'current-row' : '';
+    return `<tr class="${active}">
+      <td>${v}</td>
+      <td>${fmtD(bb, 1)}</td>
+      <td>${fmtD(bs, 1)}</td>
+      <td>THB ${fmt(bm)}</td>
+      <td>THB ${fmt(dm)}</td>
+      <td>THB ${fmt(tm)}</td>
+      <td><span style="font-size:11px;padding:2px 8px;border-radius:99px;background:${diff >= 0 ? 'var(--green-light)' : 'var(--red-light)'};color:${diff >= 0 ? 'var(--green)' : 'var(--red)'}">${diff >= 0 ? '+' : ''}${fmt(diff)}</span></td>
+    </tr>`;
+  }).join('');
+
+  // Find break-even
+  let breakeven = null;
+  for (let v = 5; v <= 300; v++) {
+    const tm = (v * conv * bpb * avgBagMargin) + (v * drink_margin);
+    if (tm >= monthly_target) { breakeven = v; break; }
+  }
+
+  const noteEl   = document.getElementById('roi-note');
+  const noteText = breakeven
+    ? `Break-even at ${breakeven} visitors/month — ${Math.round(conv * 100)}% conversion × ${bpb} bag(s) at THB ${fmt(avgBagMargin)} avg margin, plus THB ${fmt(drink_margin)} drink margin per visitor. ${breakeven <= 20 ? 'Very achievable at typical koi farm traffic.' : 'Adjust markup or conversion to lower this threshold.'}`
+    : 'Break-even exceeds 300 visitors/month at these settings. Review markup, conversion rate, or extend amortisation period.';
+  noteEl.className  = breakeven && breakeven <= 30 ? 'note success' : 'note';
+  noteEl.textContent = noteText;
+}
+
+// ─────────────────────────────────────────────
+// TAB SWITCHING
+// ─────────────────────────────────────────────
+
+function switchTab(t) {
+  ['order', 'pricing', 'shipping', 'roi'].forEach(id => {
+    document.getElementById('tab-' + id).classList.toggle('active', id === t);
+  });
+  document.querySelectorAll('.nav-btn').forEach((btn, i) => {
+    const ids = ['order', 'pricing', 'shipping', 'roi'];
+    btn.classList.toggle('active', ids[i] === t);
+  });
+}
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+
+buildBeanList();
+calc();
+</script>
+</body>
+</html>
